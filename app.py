@@ -31,10 +31,10 @@ def load_model():
     if not os.path.exists(MODEL_PATH):
         with st.spinner("Downloading model..."):
             gdown.download(id=GDRIVE_ID, output=MODEL_PATH, quiet=False)
-    from ai_edge_litert.interpreter import Interpreter
-    interpreter = Interpreter(model_path=MODEL_PATH)
-    interpreter.allocate_tensors()
-    return interpreter
+   import tensorflow as tf
+   interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+   interpreter.allocate_tensors()
+   return interpreter
 
 # ── Feature Extraction ──────────────────────────────────────
 def extract_features(file_path):
