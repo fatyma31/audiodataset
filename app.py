@@ -4,22 +4,11 @@ import librosa
 import streamlit as st
 import matplotlib.pyplot as plt
 import tempfile
+import urllib.request
+import tensorflow as tf
+from tensorflow.keras.models import load_model as keras_load_model
 
 st.set_page_config(page_title="Audio Classifier", page_icon="🎵", layout="centered")
-
-import urllib.request
-import os
-from tensorflow.keras.models import load_model
-
-model_path = "model.keras"
-
-url = "https://drive.google.com/uc?export=download&id=1WuZ9zalHccKKQRvXOW1QgpQ4iVhNs3AF"
-
-# download model
-urllib.request.urlretrieve(url, model_path)
-
-# load model
-model = load_model(model_path)
 
 # ── Config ──────────────────────────────────────────────────
 SAMPLE_RATE = 22050
@@ -33,7 +22,17 @@ CLASSES = [
     'Baby cry','Clock tick','Cow','Dog','Fire crackling','Frog',
     'Helicopter','Person sneeze','Pig','Rain','Rooster','Sea waves'
 ]
-MODEL_PATH = "model/mobilenet_finetuned_best.keras"
+
+MODEL_PATH = "model.keras"
+GDRIVE_URL = "https://drive.google.com/uc?export=download&id=1WuZ9zalHccKKQRvXOW1QgpQ4iVhNs3AF"
+
+# ── Load Model ──────────────────────────────────────────────
+@st.cache_resource
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("Downloading model..."):
+            urllib.request.urlretrieve(GDRIVE_URL, MODEL_PATH)
+    return keras_load_model(MODEL_PATH)
 
 # ── Feature Extraction ──────────────────────────────────────
 def extract_features(file_path):
@@ -57,12 +56,6 @@ def extract_features(file_path):
 
     return rgb[np.newaxis, ...], audio, mel_db
 
-@st.cache_resource
-def load_model():
-    if not os.path.exists(MODEL_PATH):
-        return None
-    return tf.keras.models.load_model(MODEL_PATH)
-
 # ── UI ──────────────────────────────────────────────────────
 st.title("🎵 Audio Classifier")
 st.markdown("**MobileNetV2 Transfer Learning** — 12 Sound Classes")
@@ -71,8 +64,8 @@ st.divider()
 model = load_model()
 
 if model is None:
-    st.warning("⚠️ Model not found at `model/mobilenet_finetuned_best.keras`")
-    st.code("Expected path:\naudio_classifier_app/\n└── model/\n    └── mobilenet_finetuned_best.keras")
+    st.error("❌ Model could not be loaded.")
+    st.stop()
 else:
     st.success("✅ MobileNetV2 model loaded!")
 
@@ -96,50 +89,46 @@ if uploaded:
                 st.error(f"Error: {e}")
                 st.stop()
 
-        if model is None:
-            st.error("Model not loaded.")
-        else:
-            with st.spinner("Running MobileNetV2..."):
-                probs = model.predict(x, verbose=0)[0]
+        with st.spinner("Running MobileNetV2..."):
+            probs = model.predict(x, verbose=0)[0]
 
-            st.divider()
-            st.subheader("Prediction")
+        st.divider()
+        st.subheader("Prediction")
 
-            top_idx   = int(np.argmax(probs))
-            top_class = CLASSES[top_idx]
-            top_conf  = float(probs[top_idx]) * 100
+        top_idx   = int(np.argmax(probs))
+        top_class = CLASSES[top_idx]
+        top_conf  = float(probs[top_idx]) * 100
 
-            c1, c2 = st.columns(2)
-            c1.metric("Predicted Class", top_class)
-            c2.metric("Confidence",      f"{top_conf:.1f}%")
+        c1, c2 = st.columns(2)
+        c1.metric("Predicted Class", top_class)
+        c2.metric("Confidence", f"{top_conf:.1f}%")
 
-            # Top-6 bar chart
-            top6 = np.argsort(probs)[::-1][:6]
-            names = [CLASSES[i] for i in top6]
-            confs = probs[top6] * 100
+        top6  = np.argsort(probs)[::-1][:6]
+        names = [CLASSES[i] for i in top6]
+        confs = probs[top6] * 100
 
-            fig, ax = plt.subplots(figsize=(7, 3))
-            colors = ['#378ADD' if i == 0 else '#B5D4F4' for i in range(6)]
-            ax.barh(names[::-1], confs[::-1], color=colors[::-1])
-            for i, (name, val) in enumerate(zip(names[::-1], confs[::-1])):
-                ax.text(val + 0.3, i, f"{val:.1f}%", va='center', fontsize=10)
-            ax.set_xlabel("Confidence (%)")
-            ax.set_xlim(0, max(confs) + 14)
-            ax.set_title("Top 6 Predictions", fontweight='bold')
-            ax.spines[['top','right']].set_visible(False)
+        fig, ax = plt.subplots(figsize=(7, 3))
+        colors = ['#378ADD' if i == 0 else '#B5D4F4' for i in range(6)]
+        ax.barh(names[::-1], confs[::-1], color=colors[::-1])
+        for i, (name, val) in enumerate(zip(names[::-1], confs[::-1])):
+            ax.text(val + 0.3, i, f"{val:.1f}%", va='center', fontsize=10)
+        ax.set_xlabel("Confidence (%)")
+        ax.set_xlim(0, max(confs) + 14)
+        ax.set_title("Top 6 Predictions", fontweight='bold')
+        ax.spines[['top','right']].set_visible(False)
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
+
+        with st.expander("View Mel Spectrogram"):
+            fig2, ax2 = plt.subplots(figsize=(8, 3))
+            import librosa.display
+            librosa.display.specshow(mel_db, sr=SAMPLE_RATE, ax=ax2, cmap='magma')
+            ax2.set_title("Mel Spectrogram (input to model)")
+            ax2.axis('off')
             plt.tight_layout()
-            st.pyplot(fig)
+            st.pyplot(fig2)
             plt.close()
-
-            with st.expander("View Mel Spectrogram"):
-                fig2, ax2 = plt.subplots(figsize=(8, 3))
-                import librosa.display
-                librosa.display.specshow(mel_db, sr=SAMPLE_RATE, ax=ax2, cmap='magma')
-                ax2.set_title("Mel Spectrogram (input to model)")
-                ax2.axis('off')
-                plt.tight_layout()
-                st.pyplot(fig2)
-                plt.close()
 
         os.unlink(tmp_path)
 
@@ -154,15 +143,6 @@ with st.sidebar:
 | Feature | Mel Spectrogram |
 | Classes | 12 |
 | Expected Acc | 80–95% |
-""")
-    st.divider()
-    st.markdown("**Why MobileNetV2?**")
-    st.markdown("""
-- Custom CNN ne sirf **13%** diya
-- 480 samples ke liye kam tha
-- MobileNetV2 **ImageNet** pe train hai
-- Strong features already hain
-- Transfer Learning = best choice
 """)
     st.divider()
     st.markdown("**Classes**")
