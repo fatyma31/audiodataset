@@ -1,8 +1,10 @@
 streamlit
-numpy==1.26.4
-librosa==0.10.1
+numpy
+librosa
 scikit-learn
 pandas
 matplotlib
 seaborn
-tensorflow-cpu==2.16.1
+gdown
+Pillow
+tflite-runtime
