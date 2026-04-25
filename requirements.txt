@@ -7,4 +7,4 @@ matplotlib
 seaborn
 gdown
 Pillow
-tflite-runtime
+tensorflow-cpu
