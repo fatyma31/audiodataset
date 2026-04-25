@@ -33,7 +33,6 @@ def load_model():
             gdown.download(id=GDRIVE_ID, output=MODEL_PATH, quiet=False)
    import tensorflow as tf
    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-   interpreter.allocate_tensors()
    return interpreter
 
 # ── Feature Extraction ──────────────────────────────────────
