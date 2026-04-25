@@ -31,9 +31,10 @@ def load_model():
     if not os.path.exists(MODEL_PATH):
         with st.spinner("Downloading model..."):
             gdown.download(id=GDRIVE_ID, output=MODEL_PATH, quiet=False)
-   import tensorflow as tf
-   interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
-   return interpreter
+    import tensorflow as tf
+    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    return interpreter
 
 # ── Feature Extraction ──────────────────────────────────────
 def extract_features(file_path):
@@ -49,7 +50,6 @@ def extract_features(file_path):
     mel_db   = librosa.power_to_db(mel, ref=np.max)
     mel_norm = (mel_db - mel_db.min()) / (mel_db.max() - mel_db.min() + 1e-9)
 
-    # Resize using PIL — no tensorflow needed
     mel_img = Image.fromarray((mel_norm * 255).astype(np.uint8))
     mel_img = mel_img.resize((IMG_SIZE, IMG_SIZE))
     mel_r   = np.array(mel_img).astype(np.float32) / 255.0
@@ -57,7 +57,7 @@ def extract_features(file_path):
     cmap = plt.get_cmap('magma')
     rgb  = cmap(mel_r)[:, :, :3]
     rgb  = (rgb * 255).astype(np.float32)
-    rgb  = (rgb / 127.5) - 1.0  # MobileNetV2 preprocessing
+    rgb  = (rgb / 127.5) - 1.0
 
     return rgb[np.newaxis, ...], audio, mel_db
 
