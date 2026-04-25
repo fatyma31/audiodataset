@@ -7,6 +7,20 @@ import tempfile
 
 st.set_page_config(page_title="Audio Classifier", page_icon="🎵", layout="centered")
 
+import urllib.request
+import os
+from tensorflow.keras.models import load_model
+
+model_path = "model.keras"
+
+url = "https://drive.google.com/uc?export=download&id=1WuZ9zalHccKKQRvXOW1QgpQ4iVhNs3AF"
+
+# download model
+urllib.request.urlretrieve(url, model_path)
+
+# load model
+model = load_model(model_path)
+
 # ── Config ──────────────────────────────────────────────────
 SAMPLE_RATE = 22050
 DURATION    = 4
