@@ -5,4 +5,4 @@ scikit-learn
 pandas
 matplotlib
 seaborn
-tensorflow==2.15.0
+tensorflow-cpu==2.15.0
