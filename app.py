@@ -24,7 +24,7 @@ CLASSES = [
 ]
 
 MODEL_PATH = "model.keras"
-GDRIVE_URL = "https://drive.google.com/uc?export=download&id=1WuZ9zalHccKKQRvXOW1QgpQ4iVhNs3AF"
+GDRIVE_URL = "1gEX_-jHiFX7NPr_Sw63iTnDEPwKi7vlt"
 
 # ── Load Model ──────────────────────────────────────────────
 @st.cache_resource
