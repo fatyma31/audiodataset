@@ -5,3 +5,6 @@ scikit-learn
 pandas
 matplotlib
 seaborn
+gdown
+Pillow
+ai-edge-litert
