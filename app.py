@@ -9,6 +9,17 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model as keras_load_model
 
 st.set_page_config(page_title="Audio Classifier", page_icon="🎵", layout="centered")
+@st.cache_resource
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("Downloading model..."):
+            gdown.download(id=GDRIVE_ID, output=MODEL_PATH, quiet=False)
+    
+    # ai-edge-litert is Google's official tflite for Python 3.14
+    from ai_edge_litert.interpreter import Interpreter
+    interpreter = Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    return interpreter
 
 # ── Config ──────────────────────────────────────────────────
 SAMPLE_RATE = 22050
