@@ -3,3 +3,5 @@ numpy
 librosa
 scikit-learn
 pandas
+matplotlib
+seaborn
